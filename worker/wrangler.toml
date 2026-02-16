@@ -1,0 +1,7 @@
+name = "mtg-deck-proxy"
+main = "worker.js"
+compatibility_date = "2024-01-01"
+
+# The API key is set as a secret, NOT here in the config.
+# Run: npx wrangler secret put OPENAI_API_KEY
+# Then paste your key when prompted.
