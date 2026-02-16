@@ -323,12 +323,15 @@ async function callChatGPT() {
 
     conversationHistory.push({ role: 'assistant', content: assistantMessage });
 
-    addChatMessage('assistant', assistantMessage);
-
     // Parse and display deck
     const parsed = parseDeckList(assistantMessage);
     if (parsed.deck) {
       displayDeck(parsed);
+      // Show only the explanation in chat — deck list goes to the Deck Manifest panel
+      const chatText = parsed.explanation || 'Deck generated! Check the Deck Manifest panel.';
+      addChatMessage('assistant', chatText);
+    } else {
+      addChatMessage('assistant', assistantMessage);
     }
   } catch (err) {
     addChatMessage('system', `Error: ${err.message}`);
