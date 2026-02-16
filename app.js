@@ -2,8 +2,7 @@
 // MTG Arena Deck Builder — App Logic
 // ============================================================
 
-// TODO: Replace with your deployed Cloudflare Worker URL
-const API_PROXY_URL = 'https://mtg-deck-proxy.<your-subdomain>.workers.dev';
+const API_PROXY_URL = '/api/chat';
 
 const SYSTEM_PROMPT = `You are an expert Magic: The Gathering deck builder specializing in MTG Arena Standard format.
 
