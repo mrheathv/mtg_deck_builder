@@ -2,12 +2,6 @@
 // MTG Arena Deck Builder — App Logic
 // ============================================================
 
-// ============================================================
-// Configuration
-// ============================================================
-// UPDATE THIS to your deployed Cloudflare Worker URL:
-const API_PROXY_URL = 'https://mtg-deck-proxy.YOUR_SUBDOMAIN.workers.dev';
-
 const SYSTEM_PROMPT = `You are an expert Magic: The Gathering deck builder specializing in MTG Arena Standard format.
 
 IMPORTANT RULES:
@@ -47,6 +41,9 @@ let currentDeckText = '';
 // DOM Elements
 // ============================================================
 const $ = (sel) => document.querySelector(sel);
+const apiKeyInput = $('#api-key');
+const apiStatus = $('#api-status');
+const toggleKeyBtn = $('#toggle-key-visibility');
 const generateBtn = $('#generate-btn');
 const generateError = $('#generate-error');
 const chatMessages = $('#chat-messages');
@@ -138,6 +135,19 @@ function safeParseJSON(str, fallback) {
 // Event Listeners
 // ============================================================
 function setupEventListeners() {
+  // API Key
+  apiKeyInput.addEventListener('input', onApiKeyChange);
+  toggleKeyBtn.addEventListener('click', () => {
+    const isPassword = apiKeyInput.type === 'password';
+    apiKeyInput.type = isPassword ? 'text' : 'password';
+    const eyeIcon = $('#eye-icon');
+    if (eyeIcon) {
+      eyeIcon.innerHTML = isPassword
+        ? '<path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/>'
+        : '<path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/>';
+    }
+  });
+
   // Color buttons
   document.querySelectorAll('.color-btn').forEach(btn => {
     btn.addEventListener('click', () => {
@@ -166,6 +176,19 @@ function setupEventListeners() {
 
   // Copy deck
   copyDeckBtn.addEventListener('click', copyDeckToClipboard);
+}
+
+function onApiKeyChange() {
+  const key = apiKeyInput.value.trim();
+  if (key.length > 10) {
+    apiStatus.textContent = 'Key set';
+    apiStatus.classList.add('active');
+    generateBtn.disabled = false;
+  } else {
+    apiStatus.textContent = 'Not set';
+    apiStatus.classList.remove('active');
+    generateBtn.disabled = true;
+  }
 }
 
 // ============================================================
@@ -239,6 +262,12 @@ function buildCardListText(filteredNames) {
 // Generate Deck
 // ============================================================
 async function generateDeck() {
+  const apiKey = apiKeyInput.value.trim();
+  if (!apiKey) {
+    showError('Please enter your OpenAI API key.');
+    return;
+  }
+
   if (selectedColors.size === 0) {
     showError('Please select at least one color.');
     return;
@@ -275,8 +304,8 @@ Remember: output the deck in exact MTG Arena import format, then explain the str
   chatMessages.innerHTML = '';
   addChatMessage('user', `Generate a ${colorStr} ${archetype} deck (${format === 'bo1' ? 'BO1' : 'BO3'})${extraInstructions ? '\n' + extraInstructions : ''}`);
 
-  // Call API via proxy
-  await callAPI();
+  // Call API
+  await callChatGPT(apiKey);
 }
 
 // ============================================================
@@ -286,28 +315,35 @@ async function sendChatMessage() {
   const text = chatInput.value.trim();
   if (!text) return;
 
+  const apiKey = apiKeyInput.value.trim();
+  if (!apiKey) {
+    showError('Please enter your OpenAI API key.');
+    return;
+  }
+
   chatInput.value = '';
   addChatMessage('user', text);
 
   conversationHistory.push({ role: 'user', content: text });
 
-  await callAPI();
+  await callChatGPT(apiKey);
 }
 
 // ============================================================
-// API Call — via Cloudflare Worker proxy
+// ChatGPT API Call
 // ============================================================
-async function callAPI() {
+async function callChatGPT(apiKey) {
   generateBtn.disabled = true;
   chatSendBtn.disabled = true;
   chatInput.disabled = true;
   showLoading('The Oracle is conjuring your deck...');
 
   try {
-    const response = await fetch(API_PROXY_URL, {
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
         model: 'gpt-4o',
@@ -339,7 +375,7 @@ async function callAPI() {
     console.error('API error:', err);
   } finally {
     hideLoading();
-    generateBtn.disabled = false;
+    generateBtn.disabled = !apiKeyInput.value.trim();
     chatSendBtn.disabled = false;
     chatInput.disabled = false;
     chatInput.focus();
