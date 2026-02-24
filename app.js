@@ -27,7 +27,8 @@ Sideboard
 
 After the deck list, you may include a brief explanation of the deck strategy and card choices.
 
-When the user asks you to modify the deck, output the COMPLETE updated deck list in the same format (not just the changes).`;
+When the user asks you to modify the deck, output the COMPLETE updated deck list in the same format (not just the changes).
+When the user asks general questions about the deck or strategy, answer concisely without re-outputting the full deck list.`;
 
 // ============================================================
 // State
@@ -330,6 +331,11 @@ async function callChatGPT() {
       // Show only the explanation in chat — deck list goes to the Deck Manifest panel
       const chatText = parsed.explanation || 'Deck generated! Check the Deck Manifest panel.';
       addChatMessage('assistant', chatText);
+
+      // Condense history to avoid rate limits on follow-up messages.
+      // Replace the verbose card-list prompt with a compact deck summary
+      // so subsequent chat calls send far fewer tokens.
+      condenseHistory(parsed);
     } else {
       addChatMessage('assistant', assistantMessage);
     }
@@ -343,6 +349,33 @@ async function callChatGPT() {
     chatInput.disabled = false;
     chatInput.focus();
   }
+}
+
+// ============================================================
+// Condense conversation history to reduce token usage
+// ============================================================
+function condenseHistory(parsed) {
+  // Build a compact deck summary to replace the massive card-list prompt
+  let deckSummary = 'Deck\n';
+  for (const entry of parsed.deck) {
+    deckSummary += `${entry.count} ${entry.name}\n`;
+  }
+  if (parsed.sideboard) {
+    deckSummary += '\nSideboard\n';
+    for (const entry of parsed.sideboard) {
+      deckSummary += `${entry.count} ${entry.name}\n`;
+    }
+  }
+
+  const condensedUser = `Here is the current deck list:\n\n${deckSummary}\n${parsed.explanation ? `Strategy: ${parsed.explanation}` : ''}`;
+  const condensedAssistant = 'Got it. I have the full deck list and strategy above. How would you like to modify the deck?';
+
+  // Replace history: keep system prompt, swap in condensed context
+  conversationHistory = [
+    conversationHistory[0], // system prompt
+    { role: 'user', content: condensedUser },
+    { role: 'assistant', content: condensedAssistant }
+  ];
 }
 
 // ============================================================
