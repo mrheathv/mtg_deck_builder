@@ -92,7 +92,7 @@ async function loadDatabase() {
     // Load unique card names with their data (deduplicated by oracle_id)
     // New schema: oracle_cards + printings tables, filter for standard-legal Arena cards
     const results = db.exec(`
-      SELECT oc.name, oc.color_identity, oc.type_line, oc.mana_cost, oc.cmc, p.rarity, oc.oracle_text, oc.keywords
+      SELECT oc.name, oc.color_identity, oc.type_line, oc.mana_cost, oc.cmc, p.rarity, oc.oracle_text, oc.keywords, p.set_name
       FROM oracle_cards oc
       JOIN printings p ON p.oracle_id = oc.oracle_id
       WHERE p.lang = 'en'
@@ -108,7 +108,7 @@ async function loadDatabase() {
       cardDataMap = {};
 
       for (const row of rows) {
-        const [name, colorIdentity, typeLine, manaCost, cmc, rarity, oracleText, keywords] = row;
+        const [name, colorIdentity, typeLine, manaCost, cmc, rarity, oracleText, keywords, setName] = row;
         cardNames.push(name);
         cardDataMap[name] = {
           colorIdentity: safeParseJSON(colorIdentity, []),
@@ -117,7 +117,8 @@ async function loadDatabase() {
           cmc: cmc || 0,
           rarity: rarity || '',
           oracleText: oracleText || '',
-          keywords: safeParseJSON(keywords, [])
+          keywords: safeParseJSON(keywords, []),
+          setName: setName || ''
         };
       }
     }
@@ -231,7 +232,7 @@ function buildCardListText(filteredNames) {
     for (const name of groups[type]) {
       const c = cardDataMap[name];
       const oracle = c.oracleText ? ` | ${c.oracleText.replace(/\n/g, ' ')}` : '';
-      text += `${name} | ${c.manaCost} | ${c.typeLine} | ${c.rarity}${oracle}\n`;
+      text += `${name} | ${c.manaCost} | ${c.typeLine} | ${c.rarity} | [${c.setName}]${oracle}\n`;
     }
   }
   return text;
