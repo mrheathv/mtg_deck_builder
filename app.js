@@ -236,8 +236,7 @@ function buildCardListText(filteredNames) {
     text += `\n--- ${type}s (${groups[type].length}) ---\n`;
     for (const name of groups[type]) {
       const c = cardDataMap[name];
-      const oracle = c.oracleText ? ` | ${c.oracleText.replace(/\n/g, ' ')}` : '';
-      text += `${name} | ${c.manaCost} | ${c.typeLine} | ${c.rarity} | [${c.setName}]${oracle}\n`;
+      text += `${name} | ${c.manaCost} | ${c.typeLine} | ${c.rarity} | [${c.setName}]\n`;
     }
   }
   return text;
