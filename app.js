@@ -89,16 +89,21 @@ async function loadDatabase() {
     const [SQL, buf] = await Promise.all([sqlPromise, dataPromise]);
     db = new SQL.Database(new Uint8Array(buf));
 
-    // Load unique card names with their data (deduplicated by oracle_id)
-    // New schema: oracle_cards + printings tables, filter for standard-legal Arena cards
+    // Load unique card names with their data (deduplicated by oracle_id).
+    // Join to the most recent standard-legal Arena printing so set_name reflects
+    // the newest set the card appears in (important for set-themed deck generation).
     const results = db.exec(`
       SELECT oc.name, oc.color_identity, oc.type_line, oc.mana_cost, oc.cmc, p.rarity, oc.oracle_text, oc.keywords, p.set_name
       FROM oracle_cards oc
-      JOIN printings p ON p.oracle_id = oc.oracle_id
-      WHERE p.lang = 'en'
-        AND json_extract(p.legalities, '$.standard') = 'legal'
-        AND p.games LIKE '%arena%'
-      GROUP BY oc.oracle_id
+      JOIN printings p ON p.id = (
+        SELECT p2.id FROM printings p2
+        WHERE p2.oracle_id = oc.oracle_id
+          AND p2.lang = 'en'
+          AND json_extract(p2.legalities, '$.standard') = 'legal'
+          AND p2.games LIKE '%arena%'
+        ORDER BY p2.released_at DESC
+        LIMIT 1
+      )
       ORDER BY oc.name
     `);
 
