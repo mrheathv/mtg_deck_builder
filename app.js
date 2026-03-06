@@ -81,7 +81,7 @@ async function loadDatabase() {
       locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
     });
 
-    const dataPromise = fetch('arena_standard_cards.sqlite').then(r => {
+    const dataPromise = fetch('data/mtg_cards.sqlite3').then(r => {
       if (!r.ok) throw new Error('Failed to load database file');
       return r.arrayBuffer();
     });
@@ -90,12 +90,16 @@ async function loadDatabase() {
     db = new SQL.Database(new Uint8Array(buf));
 
     // Load unique card names with their data (deduplicated by oracle_id)
+    // New schema: oracle_cards + printings tables, filter for standard-legal Arena cards
     const results = db.exec(`
-      SELECT name, color_identity, type_line, mana_cost, cmc, rarity, oracle_text, keywords
-      FROM cards
-      WHERE lang = 'en'
-      GROUP BY oracle_id
-      ORDER BY name
+      SELECT oc.name, oc.color_identity, oc.type_line, oc.mana_cost, oc.cmc, p.rarity, oc.oracle_text, oc.keywords
+      FROM oracle_cards oc
+      JOIN printings p ON p.oracle_id = oc.oracle_id
+      WHERE p.lang = 'en'
+        AND json_extract(p.legalities, '$.standard') = 'legal'
+        AND p.games LIKE '%arena%'
+      GROUP BY oc.oracle_id
+      ORDER BY oc.name
     `);
 
     if (results.length > 0) {
@@ -121,7 +125,7 @@ async function loadDatabase() {
     console.log(`Loaded ${cardNames.length} unique cards`);
   } catch (err) {
     console.error('DB load error:', err);
-    alert('Failed to load the card database. Make sure arena_standard_cards.sqlite is in the same directory.');
+    alert('Failed to load the card database. Make sure data/mtg_cards.sqlite3 is present.');
   }
 }
 
