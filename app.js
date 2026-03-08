@@ -209,6 +209,29 @@ function getFilteredCardList() {
   return filtered;
 }
 
+// Build a compact card line to reduce API token usage.
+//
+// Token budget strategy by rarity:
+//   rare/mythic  — full type line + oracle text (stripped of reminder text, ≤60 chars)
+//                  These are the build-around cards the AI needs to understand.
+//   uncommon     — abbreviated type + very short oracle (≤20 chars stripped)
+//                  Role-players; a hint is enough for the AI to evaluate them.
+//   common       — abbreviated type only, no oracle
+//                  Mostly well-known filler; name + cost + type suffices.
+//   basic land   — name only (e.g. "Plains")
+//
+// set_name is omitted from all lines — it's not needed for deck construction.
+
+const TYPE_ABBREV = {
+  Creature: 'Cr', Instant: 'In', Sorcery: 'So', Enchantment: 'En',
+  Artifact: 'Ar', Planeswalker: 'Pl', Battle: 'Ba', Land: 'La', Other: '--',
+};
+
+function stripOracle(oracleText) {
+  // Remove parenthetical reminder text; the AI knows the rules keywords.
+  return (oracleText || '').replace(/\([^)]*\)/g, '').replace(/\s+/g, ' ').trim();
+}
+
 function buildCardListText(filteredNames) {
   // Group by type for easier AI consumption
   const groups = {};
@@ -234,9 +257,26 @@ function buildCardListText(filteredNames) {
   for (const type of typeOrder) {
     if (!groups[type] || groups[type].length === 0) continue;
     text += `\n--- ${type}s (${groups[type].length}) ---\n`;
+    const abbrev = TYPE_ABBREV[type] || '--';
     for (const name of groups[type]) {
       const c = cardDataMap[name];
-      text += `${name} | ${c.manaCost} | ${c.typeLine} | ${c.rarity} | [${c.setName}]\n`;
+      const isBasicLand = c.typeLine.includes('Basic Land');
+      const isRarePlus = c.rarity === 'rare' || c.rarity === 'mythic';
+
+      if (isBasicLand) {
+        text += `${name}\n`;
+      } else if (isRarePlus) {
+        const oracle = stripOracle(c.oracleText);
+        const oraclePart = oracle ? ` | ${oracle.length > 60 ? oracle.slice(0, 60) + '…' : oracle}` : '';
+        text += `${name} | ${c.manaCost} | ${c.typeLine} | ${c.rarity}${oraclePart}\n`;
+      } else if (c.rarity === 'uncommon') {
+        const oracle = stripOracle(c.oracleText);
+        const oraclePart = oracle ? ` | ${oracle.length > 20 ? oracle.slice(0, 20) + '…' : oracle}` : '';
+        text += `${name} | ${c.manaCost} | ${abbrev}${oraclePart}\n`;
+      } else {
+        // common
+        text += `${name} | ${c.manaCost} | ${abbrev}\n`;
+      }
     }
   }
   return text;
@@ -320,7 +360,7 @@ async function callChatGPT() {
         model: 'gpt-4o-mini',
         messages: conversationHistory,
         temperature: 0.7,
-        max_tokens: 4000
+        max_tokens: 1500
       })
     });
 
