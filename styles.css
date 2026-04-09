@@ -330,6 +330,21 @@ main {
   grid-column: 1 / -1;
 }
 
+.format-notice {
+  font-family: var(--font-flavor, serif);
+  font-style: italic;
+  font-size: 0.78rem;
+  color: var(--gold, #c9a227);
+  background: rgba(201, 162, 39, 0.06);
+  border: 1px solid rgba(201, 162, 39, 0.2);
+  border-radius: 4px;
+  padding: 0.4rem 0.7rem;
+}
+
+.format-notice.hidden {
+  display: none;
+}
+
 .config-group label {
   font-family: var(--font-heading);
   font-size: 0.8rem;

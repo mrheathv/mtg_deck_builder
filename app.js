@@ -179,6 +179,12 @@ function setupEventListeners() {
   // Card pool format change — reload card list from DB
   cardPoolSelect.addEventListener('change', async () => {
     selectedCardPool = cardPoolSelect.value;
+    const pioneerNotice = $('#pioneer-notice');
+    if (selectedCardPool === 'pioneer') {
+      pioneerNotice.classList.remove('hidden');
+    } else {
+      pioneerNotice.classList.add('hidden');
+    }
     showLoading(`Loading ${FORMAT_CONFIG[selectedCardPool].displayName} card pool...`);
     await loadCardsForFormat(selectedCardPool);
     hideLoading();
