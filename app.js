@@ -4,12 +4,20 @@
 
 const API_PROXY_URL = '/api/chat';
 
-const SYSTEM_PROMPT = `You are an expert Magic: The Gathering deck builder specializing in MTG Arena Standard format.
+const FORMAT_CONFIG = {
+  standard: { legalityField: 'standard', arenaOnly: true,  displayName: 'Standard'  },
+  historic: { legalityField: 'historic', arenaOnly: true,  displayName: 'Historic'  },
+  explorer: { legalityField: 'explorer', arenaOnly: true,  displayName: 'Explorer'  },
+  pioneer:  { legalityField: 'pioneer',  arenaOnly: false, displayName: 'Pioneer'   },
+};
+
+function buildSystemPrompt(formatName) {
+  return `You are an expert Magic: The Gathering deck builder specializing in MTG ${formatName} format.
 
 IMPORTANT RULES:
 1. You MUST ONLY use cards from the provided card list. Do NOT invent or hallucinate card names.
 2. Every card you include MUST appear exactly as named in the provided list.
-3. A Standard deck must contain exactly 60 cards in the main deck.
+3. A ${formatName} deck must contain exactly 60 cards in the main deck.
 4. For Best-of-3, include a 15-card sideboard.
 5. You may include up to 4 copies of any non-basic-land card.
 6. Basic lands (Plains, Island, Swamp, Mountain, Forest) have no copy limit.
@@ -29,6 +37,7 @@ After the deck list, you may include a brief explanation of the deck strategy an
 
 When the user asks you to modify the deck, output the COMPLETE updated deck list in the same format (not just the changes).
 When the user asks general questions about the deck or strategy, answer concisely without re-outputting the full deck list.`;
+}
 
 // ============================================================
 // State
@@ -37,6 +46,7 @@ let db = null;
 let cardNames = [];
 let cardDataMap = {};
 let selectedColors = new Set();
+let selectedCardPool = 'standard';
 let conversationHistory = [];
 let currentDeckText = '';
 
@@ -58,6 +68,7 @@ const deckStats = $('#deck-stats');
 const statsContent = $('#stats-content');
 const loadingOverlay = $('#loading-overlay');
 const loadingText = $('#loading-text');
+const cardPoolSelect = $('#card-pool');
 const formatSelect = $('#format');
 
 // ============================================================
@@ -89,50 +100,56 @@ async function loadDatabase() {
     const [SQL, buf] = await Promise.all([sqlPromise, dataPromise]);
     db = new SQL.Database(new Uint8Array(buf));
 
-    // Load unique card names with their data (deduplicated by oracle_id).
-    // Join to the most recent standard-legal Arena printing so set_name reflects
-    // the newest set the card appears in (important for set-themed deck generation).
-    const results = db.exec(`
-      SELECT oc.name, oc.color_identity, oc.type_line, oc.mana_cost, oc.cmc, p.rarity, oc.oracle_text, oc.keywords, p.set_name
-      FROM oracle_cards oc
-      JOIN printings p ON p.id = (
-        SELECT p2.id FROM printings p2
-        WHERE p2.oracle_id = oc.oracle_id
-          AND p2.lang = 'en'
-          AND json_extract(p2.legalities, '$.standard') = 'legal'
-          AND p2.games LIKE '%arena%'
-        ORDER BY p2.released_at DESC
-        LIMIT 1
-      )
-      ORDER BY oc.name
-    `);
-
-    if (results.length > 0) {
-      const rows = results[0].values;
-      cardNames = [];
-      cardDataMap = {};
-
-      for (const row of rows) {
-        const [name, colorIdentity, typeLine, manaCost, cmc, rarity, oracleText, keywords, setName] = row;
-        cardNames.push(name);
-        cardDataMap[name] = {
-          colorIdentity: safeParseJSON(colorIdentity, []),
-          typeLine: typeLine || '',
-          manaCost: manaCost || '',
-          cmc: cmc || 0,
-          rarity: rarity || '',
-          oracleText: oracleText || '',
-          keywords: safeParseJSON(keywords, []),
-          setName: setName || ''
-        };
-      }
-    }
-
-    console.log(`Loaded ${cardNames.length} unique cards`);
+    await loadCardsForFormat(selectedCardPool);
   } catch (err) {
     console.error('DB load error:', err);
     alert('Failed to load the card database. Make sure data/mtg_cards.sqlite3 is present.');
   }
+}
+
+// Load unique card names for the given format, deduplicated by oracle_id.
+// Joins to the most recent legal printing so set_name reflects the newest set
+// the card appears in (important for set-themed deck generation).
+async function loadCardsForFormat(format) {
+  const cfg = FORMAT_CONFIG[format];
+  const arenaClause = cfg.arenaOnly ? "AND p2.games LIKE '%arena%'" : "";
+
+  const results = db.exec(`
+    SELECT oc.name, oc.color_identity, oc.type_line, oc.mana_cost, oc.cmc, p.rarity, oc.oracle_text, oc.keywords, p.set_name
+    FROM oracle_cards oc
+    JOIN printings p ON p.id = (
+      SELECT p2.id FROM printings p2
+      WHERE p2.oracle_id = oc.oracle_id
+        AND p2.lang = 'en'
+        AND json_extract(p2.legalities, '$.${cfg.legalityField}') = 'legal'
+        ${arenaClause}
+      ORDER BY p2.released_at DESC
+      LIMIT 1
+    )
+    ORDER BY oc.name
+  `);
+
+  cardNames = [];
+  cardDataMap = {};
+
+  if (results.length > 0) {
+    for (const row of results[0].values) {
+      const [name, colorIdentity, typeLine, manaCost, cmc, rarity, oracleText, keywords, setName] = row;
+      cardNames.push(name);
+      cardDataMap[name] = {
+        colorIdentity: safeParseJSON(colorIdentity, []),
+        typeLine: typeLine || '',
+        manaCost: manaCost || '',
+        cmc: cmc || 0,
+        rarity: rarity || '',
+        oracleText: oracleText || '',
+        keywords: safeParseJSON(keywords, []),
+        setName: setName || ''
+      };
+    }
+  }
+
+  console.log(`Loaded ${cardNames.length} unique cards for ${cfg.displayName}`);
 }
 
 function safeParseJSON(str, fallback) {
@@ -157,6 +174,14 @@ function setupEventListeners() {
         btn.classList.add('selected');
       }
     });
+  });
+
+  // Card pool format change — reload card list from DB
+  cardPoolSelect.addEventListener('change', async () => {
+    selectedCardPool = cardPoolSelect.value;
+    showLoading(`Loading ${FORMAT_CONFIG[selectedCardPool].displayName} card pool...`);
+    await loadCardsForFormat(selectedCardPool);
+    hideLoading();
   });
 
   // Generate
@@ -255,7 +280,8 @@ async function generateDeck() {
   hideError();
 
   const archetype = $('#archetype').value;
-  const format = formatSelect.value;
+  const matchFormat = formatSelect.value;
+  const cfg = FORMAT_CONFIG[selectedCardPool];
   const extraInstructions = $('#extra-instructions').value.trim();
   const colorNames = {W: 'White', U: 'Blue', B: 'Black', R: 'Red', G: 'Green', C: 'Colorless'};
   const colorStr = Array.from(selectedColors).map(c => colorNames[c]).join(', ');
@@ -263,10 +289,10 @@ async function generateDeck() {
   const filteredNames = getFilteredCardList();
   const cardListText = buildCardListText(filteredNames);
 
-  let userPrompt = `Build me a Standard-legal MTG Arena ${archetype} deck in ${colorStr}.
-Format: ${format === 'bo1' ? 'Best of 1 (no sideboard needed)' : 'Best of 3 (include a 15-card sideboard)'}.
+  let userPrompt = `Build me a ${cfg.displayName}-legal MTG ${cfg.arenaOnly ? 'Arena ' : ''}${archetype} deck in ${colorStr}.
+Match Format: ${matchFormat === 'bo1' ? 'Best of 1 (no sideboard needed)' : 'Best of 3 (include a 15-card sideboard)'}.
 
-Here are ALL the legal Standard cards you may choose from (you MUST only use cards from this list):
+Here are ALL the legal ${cfg.displayName} cards you may choose from (you MUST only use cards from this list):
 ${cardListText}
 
 ${extraInstructions ? `Additional instructions: ${extraInstructions}` : ''}
@@ -275,13 +301,13 @@ Remember: output the deck in exact MTG Arena import format, then explain the str
 
   // Reset conversation
   conversationHistory = [
-    { role: 'system', content: SYSTEM_PROMPT },
+    { role: 'system', content: buildSystemPrompt(cfg.displayName) },
     { role: 'user', content: userPrompt }
   ];
 
   // Clear chat UI
   chatMessages.innerHTML = '';
-  addChatMessage('user', `Generate a ${colorStr} ${archetype} deck (${format === 'bo1' ? 'BO1' : 'BO3'})${extraInstructions ? '\n' + extraInstructions : ''}`);
+  addChatMessage('user', `Generate a ${colorStr} ${archetype} deck (${cfg.displayName} / ${matchFormat === 'bo1' ? 'BO1' : 'BO3'})${extraInstructions ? '\n' + extraInstructions : ''}`);
 
   // Call API
   await callChatGPT();
