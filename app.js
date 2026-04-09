@@ -92,7 +92,7 @@ async function loadDatabase() {
       locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
     });
 
-    const dataPromise = fetch('data/mtg_cards.sqlite3').then(r => {
+    const dataPromise = fetch('https://pub-9c2e386e89c24c7aa6cf29cc251d7a69.r2.dev/mtg_cards.sqlite3').then(r => {
       if (!r.ok) throw new Error('Failed to load database file');
       return r.arrayBuffer();
     });
