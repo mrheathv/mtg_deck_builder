@@ -1,4 +1,5 @@
-# Local database files — hosted on Cloudflare R2, not committed to git
+# Local build artifacts — hosted on Cloudflare R2, not committed to git
 data/mtg_cards.sqlite3
 data/default_cards.json
 data/default_cards.tmp
+data/cards-*.json
