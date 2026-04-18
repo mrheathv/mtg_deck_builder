@@ -1,0 +1,51 @@
+name: Update Card Database
+
+on:
+  # Run on the 1st of every month at 06:00 UTC — catches most new set releases
+  schedule:
+    - cron: '0 6 1 * *'
+  # Manual trigger from the GitHub Actions tab (use this after a new set drops)
+  workflow_dispatch:
+
+jobs:
+  build-and-upload:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: pip install requests tqdm
+
+      - name: Build card database and export JSON
+        run: python scripts/build_cards.py
+
+      - name: Upload JSON files to Cloudflare R2
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          AWS_DEFAULT_REGION: auto
+          CF_ACCOUNT_ID: ${{ secrets.CF_ACCOUNT_ID }}
+        run: |
+          for fmt in standard historic explorer pioneer; do
+            aws s3 cp data/cards-${fmt}.json \
+              s3://mtg-deck-builder/cards-${fmt}.json \
+              --endpoint-url https://${CF_ACCOUNT_ID}.r2.cloudflarestorage.com \
+              --content-type application/json
+            echo "Uploaded cards-${fmt}.json"
+          done
+
+      - name: Summary
+        run: |
+          echo "### Card Database Updated" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          for fmt in standard historic explorer pioneer; do
+            count=$(python3 -c "import json; print(len(json.load(open('data/cards-${fmt}.json'))))")
+            size=$(du -sh data/cards-${fmt}.json | cut -f1)
+            echo "- **${fmt}**: ${count} cards (${size})" >> $GITHUB_STEP_SUMMARY
+          done

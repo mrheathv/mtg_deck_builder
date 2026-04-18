@@ -42,7 +42,6 @@ When the user asks general questions about the deck or strategy, answer concisel
 // ============================================================
 // State
 // ============================================================
-let db = null;
 let cardNames = [];
 let cardDataMap = {};
 let selectedColors = new Set();
@@ -83,79 +82,42 @@ async function init() {
   setupEventListeners();
 }
 
+const R2_BASE = 'https://pub-9c2e386e89c24c7aa6cf29cc251d7a69.r2.dev';
+
 // ============================================================
-// Database Loading
+// Card Loading
 // ============================================================
 async function loadDatabase() {
-  try {
-    const sqlPromise = initSqlJs({
-      locateFile: file => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.10.3/${file}`
-    });
-
-    const dataPromise = fetch('https://pub-9c2e386e89c24c7aa6cf29cc251d7a69.r2.dev/mtg_cards.sqlite3').then(r => {
-      if (!r.ok) throw new Error('Failed to load database file');
-      return r.arrayBuffer();
-    });
-
-    const [SQL, buf] = await Promise.all([sqlPromise, dataPromise]);
-    db = new SQL.Database(new Uint8Array(buf));
-
-    await loadCardsForFormat(selectedCardPool);
-  } catch (err) {
-    console.error('DB load error:', err);
-    alert('Failed to load the card database. Make sure data/mtg_cards.sqlite3 is present.');
-  }
+  await loadCardsForFormat(selectedCardPool);
 }
 
-// Load unique card names for the given format, deduplicated by oracle_id.
-// Joins to the most recent legal printing so set_name reflects the newest set
-// the card appears in (important for set-themed deck generation).
 async function loadCardsForFormat(format) {
   const cfg = FORMAT_CONFIG[format];
-  const arenaClause = cfg.arenaOnly ? "AND p2.games LIKE '%arena%'" : "";
+  try {
+    const response = await fetch(`${R2_BASE}/cards-${format}.json`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    const cards = await response.json();
 
-  const results = db.exec(`
-    SELECT oc.name, oc.color_identity, oc.type_line, oc.mana_cost, oc.cmc, p.rarity, oc.oracle_text, oc.keywords, p.set_name
-    FROM oracle_cards oc
-    JOIN printings p ON p.id = (
-      SELECT p2.id FROM printings p2
-      WHERE p2.oracle_id = oc.oracle_id
-        AND p2.lang = 'en'
-        AND json_extract(p2.legalities, '$.${cfg.legalityField}') = 'legal'
-        ${arenaClause}
-      ORDER BY p2.released_at DESC
-      LIMIT 1
-    )
-    ORDER BY oc.name
-  `);
-
-  cardNames = [];
-  cardDataMap = {};
-
-  if (results.length > 0) {
-    for (const row of results[0].values) {
-      const [name, colorIdentity, typeLine, manaCost, cmc, rarity, oracleText, keywords, setName] = row;
-      cardNames.push(name);
-      cardDataMap[name] = {
-        colorIdentity: safeParseJSON(colorIdentity, []),
-        typeLine: typeLine || '',
-        manaCost: manaCost || '',
-        cmc: cmc || 0,
-        rarity: rarity || '',
-        oracleText: oracleText || '',
-        keywords: safeParseJSON(keywords, []),
-        setName: setName || ''
+    cardNames = [];
+    cardDataMap = {};
+    for (const card of cards) {
+      cardNames.push(card.name);
+      cardDataMap[card.name] = {
+        colorIdentity: card.color_identity,
+        typeLine: card.type_line,
+        manaCost: card.mana_cost,
+        cmc: card.cmc,
+        rarity: card.rarity,
+        oracleText: card.oracle_text,
+        keywords: card.keywords,
+        setName: card.set_name,
       };
     }
+    console.log(`Loaded ${cardNames.length} cards for ${cfg.displayName}`);
+  } catch (err) {
+    console.error('Card load error:', err);
+    alert(`Failed to load the ${cfg.displayName} card pool. Check your connection and try again.`);
   }
-
-  console.log(`Loaded ${cardNames.length} unique cards for ${cfg.displayName}`);
-}
-
-function safeParseJSON(str, fallback) {
-  if (!str) return fallback;
-  try { return JSON.parse(str); }
-  catch { return fallback; }
 }
 
 // ============================================================
