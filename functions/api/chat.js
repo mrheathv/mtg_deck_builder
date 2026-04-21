@@ -26,7 +26,7 @@ export async function onRequestPost(context) {
     }
 
     const payload = {
-      model: body.model || 'gpt-4o-mini',
+      model: body.model || 'gpt-5.4-nano',
       messages: body.messages,
       temperature: body.temperature ?? 0.7,
       max_tokens: Math.min(body.max_tokens || 4000, 8000),
