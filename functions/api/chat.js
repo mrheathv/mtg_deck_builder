@@ -29,7 +29,7 @@ export async function onRequestPost(context) {
       model: body.model || 'gpt-5.4-nano',
       messages: body.messages,
       temperature: body.temperature ?? 0.7,
-      max_tokens: Math.min(body.max_tokens || 4000, 8000),
+      max_completion_tokens: Math.min(body.max_completion_tokens || 4000, 8000),
     };
 
     const openaiResponse = await fetch('https://api.openai.com/v1/chat/completions', {
