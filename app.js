@@ -48,6 +48,7 @@ let selectedColors = new Set();
 let selectedCardPool = 'standard';
 let conversationHistory = [];
 let currentDeckText = '';
+let cardIdMap = {}; // Maps C1, C2, … IDs back to real card names; rebuilt each generation
 
 // ============================================================
 // DOM Elements
@@ -203,6 +204,15 @@ function getFilteredCardList() {
 }
 
 function buildCardListText(filteredNames) {
+  // Assign short IDs and rebuild the id→name map for this generation
+  cardIdMap = {};
+  const nameToId = {};
+  filteredNames.forEach((name, i) => {
+    const id = `C${i + 1}`;
+    cardIdMap[id] = name;
+    nameToId[name] = id;
+  });
+
   // Group by type for easier AI consumption
   const groups = {};
   for (const name of filteredNames) {
@@ -230,7 +240,7 @@ function buildCardListText(filteredNames) {
     for (const name of groups[type]) {
       const c = cardDataMap[name];
       const oracle = c.oracleText ? ` | ${c.oracleText.slice(0, 200).replace(/\n/g, ' ')}` : '';
-      text += `${name} | ${c.manaCost} | ${c.typeLine} | ${c.rarity}${oracle}\n`;
+      text += `${nameToId[name]} | ${c.manaCost} | ${c.typeLine} | ${c.rarity}${oracle}\n`;
     }
   }
   return text;
@@ -265,7 +275,14 @@ ${cardListText}
 
 ${extraInstructions ? `Additional instructions: ${extraInstructions}` : ''}
 
-Remember: output the deck in exact MTG Arena import format, then explain the strategy.`;
+Remember: each card above is identified by an ID (e.g., C42). Use those IDs — not card names — in the deck list output. Format:
+
+Deck
+4 C42
+3 C107
+...
+
+After the deck list, explain the strategy using the card names (which you know from the oracle text context).`;
 
   // Reset conversation
   conversationHistory = [
@@ -406,11 +423,12 @@ function parseDeckList(text) {
       continue;
     }
 
-    // Match "4 Card Name" or "4x Card Name"
+    // Match "4 C42" (ID format) or "4 Card Name" (name format)
     const match = trimmed.match(/^(\d+)x?\s+(.+)$/);
     if (match && currentSection) {
       const count = parseInt(match[1], 10);
-      const name = match[2].trim();
+      const raw = match[2].trim();
+      const name = cardIdMap[raw] || raw; // resolve ID → real name; fall back to raw
       if (currentSection === 'deck') {
         deck.push({ count, name });
       } else {
