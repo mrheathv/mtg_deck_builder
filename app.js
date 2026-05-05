@@ -329,7 +329,7 @@ async function callChatGPT() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5.4-mini',
+        model: 'gpt-5.4',
         messages: conversationHistory,
         temperature: 0.7,
         max_completion_tokens: 4000
