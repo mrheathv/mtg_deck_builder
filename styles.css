@@ -25,11 +25,20 @@
   --text-muted: #7a766c;
   --text-dim: #555045;
 
-  /* Accent — aged gold */
-  --gold: #c9a227;
-  --gold-light: #e0be42;
-  --gold-glow: rgba(201, 162, 39, 0.25);
-  --gold-deep: #8b6914;
+  /* Accent — forge amber */
+  --gold: #d4870a;
+  --gold-light: #f09a30;
+  --gold-glow: rgba(212, 135, 10, 0.3);
+  --gold-deep: #9a5c00;
+
+  /* Mana identity gradient (WUBRG) */
+  --mana-gradient: linear-gradient(90deg,
+    #e8e4c8 0%,
+    #4ab8f0 25%,
+    #9966cc 50%,
+    #e84040 75%,
+    #3dbb6e 100%
+  );
 
   /* Status */
   --success: #5cb85c;
@@ -68,8 +77,9 @@ body {
   pointer-events: none;
   z-index: 0;
   background:
-    radial-gradient(ellipse at 20% 0%, rgba(201, 162, 39, 0.03) 0%, transparent 50%),
-    radial-gradient(ellipse at 80% 0%, rgba(100, 60, 180, 0.03) 0%, transparent 50%),
+    radial-gradient(ellipse at 15% 0%, rgba(74, 184, 240, 0.04) 0%, transparent 45%),
+    radial-gradient(ellipse at 50% 0%, rgba(212, 135, 10, 0.04) 0%, transparent 40%),
+    radial-gradient(ellipse at 85% 0%, rgba(61, 187, 110, 0.04) 0%, transparent 45%),
     radial-gradient(ellipse at 50% 100%, rgba(0, 0, 0, 0.6) 0%, transparent 70%);
 }
 
@@ -84,6 +94,8 @@ header {
   background:
     linear-gradient(180deg, rgba(20, 18, 12, 0.95) 0%, var(--bg-deep) 100%);
   border-bottom: 1px solid var(--border-dark);
+  border-top: 3px solid transparent;
+  border-image: var(--mana-gradient) 1;
 }
 
 header::after {
@@ -91,7 +103,8 @@ header::after {
   position: absolute;
   bottom: 0; left: 10%; right: 10%;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold-deep), var(--gold), var(--gold-deep), transparent);
+  background: var(--mana-gradient);
+  opacity: 0.5;
 }
 
 .header-inner {
@@ -148,21 +161,21 @@ header h1 {
 }
 
 .divider-wing {
-  width: 50px;
+  width: 60px;
   height: 1px;
-  background: linear-gradient(90deg, transparent, var(--gold-deep));
+  background: linear-gradient(90deg, transparent, #4ab8f0, #9966cc);
 }
 
 .divider-wing.right {
-  background: linear-gradient(90deg, var(--gold-deep), transparent);
+  background: linear-gradient(90deg, #e84040, #3dbb6e, transparent);
 }
 
 .divider-gem {
   width: 8px;
   height: 8px;
-  background: var(--gold);
+  background: var(--mana-gradient);
   transform: rotate(45deg);
-  box-shadow: 0 0 6px var(--gold-glow);
+  box-shadow: 0 0 8px rgba(212, 135, 10, 0.5);
 }
 
 .divider-gem.small {
@@ -460,10 +473,10 @@ main {
   align-items: center;
   gap: 0.6rem;
   padding: 0.75rem 2rem;
-  background: linear-gradient(180deg, var(--gold) 0%, var(--gold-deep) 100%);
-  border: 1px solid var(--gold);
+  background: linear-gradient(180deg, #e87030 0%, #b84010 60%, #7a2800 100%);
+  border: 1px solid #c85020;
   border-radius: 5px;
-  color: #0a0a0f;
+  color: #f5e8d8;
   font-family: var(--font-heading);
   font-size: 0.95rem;
   font-weight: 700;
@@ -472,15 +485,15 @@ main {
   cursor: pointer;
   transition: all 0.25s;
   box-shadow:
-    0 2px 8px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    0 2px 12px rgba(200, 80, 20, 0.4),
+    inset 0 1px 0 rgba(255, 200, 150, 0.2);
 }
 
 .btn-generate:hover:not(:disabled) {
-  background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 100%);
+  background: linear-gradient(180deg, #ff8c40 0%, #d05020 60%, #962e00 100%);
   box-shadow:
-    0 4px 16px rgba(201, 162, 39, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    0 4px 20px rgba(220, 90, 20, 0.5),
+    inset 0 1px 0 rgba(255, 200, 150, 0.3);
   transform: translateY(-1px);
 }
 
@@ -589,18 +602,18 @@ main {
   justify-content: center;
   width: 42px;
   height: 42px;
-  background: linear-gradient(180deg, var(--gold) 0%, var(--gold-deep) 100%);
-  border: 1px solid var(--gold-deep);
+  background: linear-gradient(180deg, #e87030 0%, #9a3800 100%);
+  border: 1px solid #c85020;
   border-radius: 5px;
-  color: #0a0a0f;
+  color: #f5e8d8;
   cursor: pointer;
   transition: all 0.2s;
   flex-shrink: 0;
 }
 
 .btn-send:hover:not(:disabled) {
-  background: linear-gradient(180deg, var(--gold-light) 0%, var(--gold) 100%);
-  box-shadow: 0 2px 8px rgba(201, 162, 39, 0.3);
+  background: linear-gradient(180deg, #ff8c40 0%, #b84010 100%);
+  box-shadow: 0 2px 10px rgba(200, 80, 20, 0.4);
 }
 
 .btn-send:disabled {
