@@ -46,7 +46,6 @@ let selectedCardPool = 'standard';
 let currentDeckText = '';
 let cardIdMap = {};
 let metaDataCache = {}; // Keyed by format slug; null means fetch was attempted but no file found
-let metaCompetitiveEnabled = false;
 
 // ============================================================
 // DOM Elements
@@ -69,7 +68,9 @@ const loadingOverlay = $('#loading-overlay');
 const loadingText    = $('#loading-text');
 const cardPoolSelect = $('#card-pool');
 const formatSelect   = $('#format');
-const checkMetaBtn   = $('#check-meta-btn');
+const checkMetaBtn     = $('#check-meta-btn');
+const metaGenerateBtn  = $('#meta-generate-btn');
+const configGrid       = document.querySelector('.config-grid');
 
 // ============================================================
 // Init
@@ -144,27 +145,16 @@ function setupEventListeners() {
   });
 
   // Model toggle
-  document.querySelectorAll('.model-btn[data-model]').forEach(btn => {
+  document.querySelectorAll('.model-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.model-btn[data-model]').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     });
   });
 
-  // Meta competitive toggle
-  $('#meta-competitive-btn').addEventListener('click', () => {
-    metaCompetitiveEnabled = true;
-    $('#meta-competitive-btn').classList.add('active');
-    $('#meta-freestyle-btn').classList.remove('active');
-  });
-  $('#meta-freestyle-btn').addEventListener('click', () => {
-    metaCompetitiveEnabled = false;
-    $('#meta-freestyle-btn').classList.add('active');
-    $('#meta-competitive-btn').classList.remove('active');
-  });
-
   // Generate
   generateBtn.addEventListener('click', () => generateDeck());
+  metaGenerateBtn.addEventListener('click', () => generateMetaDeck());
 
   // Redo
   redoBtn.addEventListener('click', redoDeck);
@@ -185,6 +175,10 @@ function setupEventListeners() {
 // ============================================================
 // Build card list for the prompt — filtered by selected colors
 // ============================================================
+function getUnfilteredCardList() {
+  return cardNames;
+}
+
 function getFilteredCardList() {
   const colors = Array.from(selectedColors);
   const wantColorless = colors.includes('C');
@@ -246,8 +240,8 @@ function buildCardListText(filteredNames) {
 // Generate Deck
 // ============================================================
 async function generateDeck(redoNote = '') {
-  if (selectedColors.size === 0 && !metaCompetitiveEnabled) {
-    showError('Please select at least one color, or enable Meta Competitive.');
+  if (selectedColors.size === 0) {
+    showError('Please select at least one color.');
     return;
   }
   hideError();
@@ -270,22 +264,9 @@ async function generateDeck(redoNote = '') {
       : `MODIFICATION: ${redoNote}`;
   }
 
-  let metaSection = '';
-  if (metaCompetitiveEnabled) {
-    const meta = await loadMetaData(selectedCardPool);
-    if (meta) metaSection = `\nCURRENT META (build one of these top archetypes or something well-positioned against them):\n${buildMetaContextText(meta)}\n`;
-  }
-
-  const colorHint  = colorStr ? `Color preference: ${colorStr}.` : 'Choose the best colors based on the meta above.';
-  const archetypeHint = metaCompetitiveEnabled
-    ? `Archetype preference: ${archetype} (override if a different meta archetype fits better).`
-    : `Build a ${archetype} deck.`;
-
-  const userPrompt = `${metaCompetitiveEnabled ? 'Build me a META-COMPETITIVE' : 'Build me a'} ${cfg.displayName}-legal MTG Arena deck.
-${metaCompetitiveEnabled ? colorHint : `Colors: ${colorStr}.`}
-${archetypeHint}
+  const userPrompt = `Build me a ${cfg.displayName}-legal MTG Arena ${archetype} deck in ${colorStr}.
 Match Format: ${matchFormat === 'bo1' ? 'Best of 1 (no sideboard needed)' : 'Best of 3 (include a 15-card sideboard)'}.
-${metaSection}
+
 Here are ALL the legal ${cfg.displayName} cards you may choose from (you MUST only use cards from this list):
 ${cardListText}
 
@@ -307,6 +288,54 @@ After the deck list, explain the strategy using the card names (which you know f
 }
 
 // ============================================================
+// Generate Top Meta Deck — ignores color/archetype/instructions
+// ============================================================
+async function generateMetaDeck() {
+  hideError();
+  checkMetaBtn.classList.add('hidden');
+
+  const meta = await loadMetaData(selectedCardPool);
+  if (!meta) {
+    showError(`No meta data available for ${FORMAT_CONFIG[selectedCardPool].displayName}. Only Standard is currently supported.`);
+    return;
+  }
+
+  const matchFormat = formatSelect.value;
+  const cfg         = FORMAT_CONFIG[selectedCardPool];
+
+  // All cards — no color filter, let the AI pick based on meta
+  const allNames    = getUnfilteredCardList();
+  const cardListText = buildCardListText(allNames);
+  const metaContext  = buildMetaContextText(meta);
+
+  const userPrompt = `You are building the single strongest meta-competitive MTG Arena ${cfg.displayName} deck right now.
+
+${metaContext}
+
+Pick the top archetype from the A-tier above (highest win rate) and build an optimal, tournament-ready version of it.
+Match Format: ${matchFormat === 'bo1' ? 'Best of 1 (no sideboard needed)' : 'Best of 3 (include a 15-card sideboard)'}.
+
+Here are ALL legal ${cfg.displayName} cards you may choose from (you MUST only use cards from this list):
+${cardListText}
+
+Remember: each card above is identified by an ID (e.g., C42). Use those IDs — not card names — in the deck list output. Format:
+
+Deck
+4 C42
+3 C107
+...
+
+After the deck list, name the archetype you built, explain why it's the strongest pick in the current meta, and describe how the deck wins.`;
+
+  configGrid.classList.add('meta-mode');
+  await callChatGPT([
+    { role: 'system', content: buildSystemPrompt(cfg.displayName) },
+    { role: 'user',   content: userPrompt },
+  ]);
+  configGrid.classList.remove('meta-mode');
+}
+
+// ============================================================
 // Redo — re-runs the full generation with a modification note
 // ============================================================
 async function redoDeck() {
@@ -319,10 +348,11 @@ async function redoDeck() {
 // API Call
 // ============================================================
 async function callChatGPT(messages) {
-  generateBtn.disabled  = true;
-  redoBtn.disabled      = true;
-  redoInput.disabled    = true;
-  checkMetaBtn.disabled = true;
+  generateBtn.disabled     = true;
+  metaGenerateBtn.disabled = true;
+  redoBtn.disabled         = true;
+  redoInput.disabled       = true;
+  checkMetaBtn.disabled    = true;
   showLoading('The Oracle is conjuring your deck...');
 
   try {
@@ -359,10 +389,11 @@ async function callChatGPT(messages) {
     console.error('API error:', err);
   } finally {
     hideLoading();
-    generateBtn.disabled  = false;
-    redoBtn.disabled      = false;
-    redoInput.disabled    = false;
-    checkMetaBtn.disabled = false;
+    generateBtn.disabled     = false;
+    metaGenerateBtn.disabled = false;
+    redoBtn.disabled         = false;
+    redoInput.disabled       = false;
+    checkMetaBtn.disabled    = false;
     redoInput.focus();
   }
 }

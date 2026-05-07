@@ -40,7 +40,7 @@
       <div class="panel-body">
         <div class="config-grid">
           <!-- Colors -->
-          <div class="config-group">
+          <div class="config-group" data-meta-irrelevant>
             <label>Mana Colors</label>
             <div class="color-picker">
               <button class="color-btn" data-color="W" title="White (Plains)">
@@ -65,7 +65,7 @@
           </div>
 
           <!-- Deck Archetype -->
-          <div class="config-group">
+          <div class="config-group" data-meta-irrelevant>
             <label for="archetype">Archetype</label>
             <div class="select-frame">
               <select id="archetype">
@@ -113,17 +113,9 @@
             </div>
           </div>
 
-          <!-- Meta Competitive -->
-          <div class="config-group full-width">
-            <label>Build Style</label>
-            <div class="model-toggle">
-              <button id="meta-competitive-btn" class="model-btn" data-meta="on">Meta Competitive</button>
-              <button id="meta-freestyle-btn" class="model-btn active" data-meta="off">Freestyle</button>
-            </div>
-          </div>
-
+          <!-- Colors / Archetype / Extra Instructions marked so meta mode can dim them -->
           <!-- Additional Instructions -->
-          <div class="config-group full-width">
+          <div class="config-group full-width" data-meta-irrelevant>
             <label for="extra-instructions">Additional Instructions <span class="optional-tag">(optional)</span></label>
             <div class="input-frame">
               <textarea id="extra-instructions" rows="2" placeholder="e.g. Focus on flying creatures, include board wipes, budget-friendly..."></textarea>
@@ -131,10 +123,16 @@
           </div>
         </div>
 
-        <button id="generate-btn" class="btn-generate">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
-          <span>Summon Deck</span>
-        </button>
+        <div class="generate-actions">
+          <button id="generate-btn" class="btn-generate">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+            <span>Summon Deck</span>
+          </button>
+          <button id="meta-generate-btn" class="btn-generate btn-meta-generate">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="20" height="20"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+            <span>Top Meta Deck</span>
+          </button>
+        </div>
         <p id="generate-error" class="error-text hidden"></p>
       </div>
     </section>
