@@ -661,6 +661,36 @@ main {
   cursor: not-allowed;
 }
 
+.btn-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1.25rem;
+  margin-top: 0.75rem;
+  background: transparent;
+  border: 1px solid rgba(80, 140, 200, 0.35);
+  border-radius: 5px;
+  color: #7ab4e0;
+  font-family: var(--font-heading);
+  font-size: 0.8rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-meta:hover:not(:disabled) {
+  border-color: rgba(80, 140, 200, 0.65);
+  color: #a8d4f5;
+  background: rgba(80, 140, 200, 0.07);
+}
+
+.btn-meta:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
 .copy-status {
   font-family: var(--font-flavor);
   font-style: italic;

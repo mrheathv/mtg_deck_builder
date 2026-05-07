@@ -45,6 +45,7 @@ let selectedColors = new Set();
 let selectedCardPool = 'standard';
 let currentDeckText = '';
 let cardIdMap = {};
+let metaDataCache = {}; // Keyed by format slug; null means fetch was attempted but no file found
 
 // ============================================================
 // DOM Elements
@@ -67,6 +68,7 @@ const loadingOverlay = $('#loading-overlay');
 const loadingText    = $('#loading-text');
 const cardPoolSelect = $('#card-pool');
 const formatSelect   = $('#format');
+const checkMetaBtn   = $('#check-meta-btn');
 
 // ============================================================
 // Init
@@ -162,6 +164,9 @@ function setupEventListeners() {
 
   // Copy deck
   copyDeckBtn.addEventListener('click', copyDeckToClipboard);
+
+  // Meta check
+  checkMetaBtn.addEventListener('click', checkMetaFit);
 }
 
 // ============================================================
@@ -233,6 +238,7 @@ async function generateDeck(redoNote = '') {
     return;
   }
   hideError();
+  checkMetaBtn.classList.add('hidden');
 
   const archetype   = $('#archetype').value;
   const matchFormat = formatSelect.value;
@@ -287,9 +293,10 @@ async function redoDeck() {
 // API Call
 // ============================================================
 async function callChatGPT(messages) {
-  generateBtn.disabled = true;
-  redoBtn.disabled = true;
-  redoInput.disabled = true;
+  generateBtn.disabled  = true;
+  redoBtn.disabled      = true;
+  redoInput.disabled    = true;
+  checkMetaBtn.disabled = true;
   showLoading('The Oracle is conjuring your deck...');
 
   try {
@@ -317,6 +324,7 @@ async function callChatGPT(messages) {
       displayDeck(parsed);
       displayStrategy(parsed.explanation || 'Deck generated! Check the Deck Manifest panel.');
       redoSection.classList.remove('hidden');
+      checkMetaBtn.classList.remove('hidden');
     } else {
       displayStrategy(assistantMessage);
     }
@@ -325,9 +333,10 @@ async function callChatGPT(messages) {
     console.error('API error:', err);
   } finally {
     hideLoading();
-    generateBtn.disabled = false;
-    redoBtn.disabled = false;
-    redoInput.disabled = false;
+    generateBtn.disabled  = false;
+    redoBtn.disabled      = false;
+    redoInput.disabled    = false;
+    checkMetaBtn.disabled = false;
     redoInput.focus();
   }
 }
@@ -398,7 +407,7 @@ function computeAndDisplayStats(parsed) {
     const data = cardDataMap[entry.name];
     if (!data) continue;
     const tl = data.typeLine;
-    if (tl.includes('Land'))         totalLands    += entry.count;
+    if (tl.includes('Land'))          totalLands     += entry.count;
     else if (tl.includes('Creature')) totalCreatures += entry.count;
     else                              totalSpells    += entry.count;
 
@@ -453,6 +462,66 @@ function displayStrategy(text) {
   div.className = 'strategy-text';
   div.textContent = text;
   strategyDisplay.appendChild(div);
+}
+
+// ============================================================
+// Meta Game Check
+// ============================================================
+async function loadMetaData(format) {
+  if (metaDataCache[format] !== undefined) return metaDataCache[format];
+  try {
+    const response = await fetch(`/meta/${format}-meta.json`);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    metaDataCache[format] = await response.json();
+  } catch {
+    metaDataCache[format] = null;
+  }
+  return metaDataCache[format];
+}
+
+function buildMetaContextText(meta) {
+  const lines = [`Current ${meta.format} Metagame (as of ${meta.lastUpdated}, source: ${meta.source}):`];
+  for (const tierGroup of meta.tiers) {
+    if (!tierGroup.decks || tierGroup.decks.length === 0) continue;
+    lines.push(`\n[${tierGroup.tier}-Tier]`);
+    for (const deck of tierGroup.decks) {
+      const colors = deck.colors.join('/');
+      const keyCards = deck.keyCards && deck.keyCards.length > 0
+        ? ` Key cards: ${deck.keyCards.join(', ')}.`
+        : '';
+      lines.push(`- ${deck.name} (${colors}, ${deck.archetype}): ${deck.description}${keyCards}`);
+    }
+  }
+  return lines.join('\n');
+}
+
+async function checkMetaFit() {
+  if (!currentDeckText) return;
+
+  const meta = await loadMetaData(selectedCardPool);
+  if (!meta) {
+    displayStrategy(`No meta data found for ${FORMAT_CONFIG[selectedCardPool].displayName}. Add a meta/${selectedCardPool}-meta.json file to enable this feature.`);
+    return;
+  }
+
+  const metaContext = buildMetaContextText(meta);
+  const cfg = FORMAT_CONFIG[selectedCardPool];
+  const prompt = `${metaContext}
+
+Here is my current deck:
+${currentDeckText}
+
+Please analyze:
+1. Where does this deck fit in the current meta? Is it well-positioned, fringe, or likely to struggle?
+2. Which top-tier decks pose the biggest threats, and how does my deck handle them?
+3. What 2-3 specific adjustments (card swaps or sideboard additions) would most improve my meta positioning?
+
+Answer concisely without re-outputting the full deck list.`;
+
+  await callChatGPT([
+    { role: 'system', content: buildSystemPrompt(cfg.displayName) },
+    { role: 'user',   content: prompt },
+  ]);
 }
 
 // ============================================================

@@ -1,0 +1,39 @@
+{
+  "format": "Standard",
+  "lastUpdated": "2026-05-07",
+  "source": "untapped.gg",
+  "tiers": [
+    {
+      "tier": "S",
+      "decks": [
+        {
+          "name": "Example Deck Name",
+          "colors": ["W", "U"],
+          "archetype": "Control",
+          "keyCards": ["Key Card 1", "Key Card 2", "Key Card 3"],
+          "description": "Replace this with a one-sentence description of the deck strategy."
+        }
+      ]
+    },
+    {
+      "tier": "A",
+      "decks": [
+        {
+          "name": "Example Deck Name",
+          "colors": ["R", "G"],
+          "archetype": "Midrange",
+          "keyCards": ["Key Card 1", "Key Card 2"],
+          "description": "Replace this with a one-sentence description of the deck strategy."
+        }
+      ]
+    },
+    {
+      "tier": "B",
+      "decks": []
+    },
+    {
+      "tier": "C",
+      "decks": []
+    }
+  ]
+}
