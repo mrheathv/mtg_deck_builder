@@ -46,6 +46,7 @@ let selectedCardPool = 'standard';
 let currentDeckText = '';
 let cardIdMap = {};
 let metaDataCache = {}; // Keyed by format slug; null means fetch was attempted but no file found
+let metaCompetitiveEnabled = false;
 
 // ============================================================
 // DOM Elements
@@ -143,11 +144,23 @@ function setupEventListeners() {
   });
 
   // Model toggle
-  document.querySelectorAll('.model-btn').forEach(btn => {
+  document.querySelectorAll('.model-btn[data-model]').forEach(btn => {
     btn.addEventListener('click', () => {
-      document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.model-btn[data-model]').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     });
+  });
+
+  // Meta competitive toggle
+  $('#meta-competitive-btn').addEventListener('click', () => {
+    metaCompetitiveEnabled = true;
+    $('#meta-competitive-btn').classList.add('active');
+    $('#meta-freestyle-btn').classList.remove('active');
+  });
+  $('#meta-freestyle-btn').addEventListener('click', () => {
+    metaCompetitiveEnabled = false;
+    $('#meta-freestyle-btn').classList.add('active');
+    $('#meta-competitive-btn').classList.remove('active');
   });
 
   // Generate
@@ -233,8 +246,8 @@ function buildCardListText(filteredNames) {
 // Generate Deck
 // ============================================================
 async function generateDeck(redoNote = '') {
-  if (selectedColors.size === 0) {
-    showError('Please select at least one color.');
+  if (selectedColors.size === 0 && !metaCompetitiveEnabled) {
+    showError('Please select at least one color, or enable Meta Competitive.');
     return;
   }
   hideError();
@@ -257,9 +270,22 @@ async function generateDeck(redoNote = '') {
       : `MODIFICATION: ${redoNote}`;
   }
 
-  const userPrompt = `Build me a ${cfg.displayName}-legal MTG Arena ${archetype} deck in ${colorStr}.
-Match Format: ${matchFormat === 'bo1' ? 'Best of 1 (no sideboard needed)' : 'Best of 3 (include a 15-card sideboard)'}.
+  let metaSection = '';
+  if (metaCompetitiveEnabled) {
+    const meta = await loadMetaData(selectedCardPool);
+    if (meta) metaSection = `\nCURRENT META (build one of these top archetypes or something well-positioned against them):\n${buildMetaContextText(meta)}\n`;
+  }
 
+  const colorHint  = colorStr ? `Color preference: ${colorStr}.` : 'Choose the best colors based on the meta above.';
+  const archetypeHint = metaCompetitiveEnabled
+    ? `Archetype preference: ${archetype} (override if a different meta archetype fits better).`
+    : `Build a ${archetype} deck.`;
+
+  const userPrompt = `${metaCompetitiveEnabled ? 'Build me a META-COMPETITIVE' : 'Build me a'} ${cfg.displayName}-legal MTG Arena deck.
+${metaCompetitiveEnabled ? colorHint : `Colors: ${colorStr}.`}
+${archetypeHint}
+Match Format: ${matchFormat === 'bo1' ? 'Best of 1 (no sideboard needed)' : 'Best of 3 (include a 15-card sideboard)'}.
+${metaSection}
 Here are ALL the legal ${cfg.displayName} cards you may choose from (you MUST only use cards from this list):
 ${cardListText}
 
@@ -486,10 +512,8 @@ function buildMetaContextText(meta) {
     lines.push(`\n[${tierGroup.tier}-Tier]`);
     for (const deck of tierGroup.decks) {
       const colors = deck.colors.join('/');
-      const keyCards = deck.keyCards && deck.keyCards.length > 0
-        ? ` Key cards: ${deck.keyCards.join(', ')}.`
-        : '';
-      lines.push(`- ${deck.name} (${colors}, ${deck.archetype}): ${deck.description}${keyCards}`);
+      const winRate = deck.winRate ? ` ${deck.winRate} win rate` : '';
+      lines.push(`- ${deck.name} (${colors})${winRate}`);
     }
   }
   return lines.join('\n');
