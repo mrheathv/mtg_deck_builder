@@ -4,36 +4,478 @@
   "source": "untapped.gg",
   "tiers": [
     {
-      "tier": "S",
-      "decks": [
-        {
-          "name": "Example Deck Name",
-          "colors": ["W", "U"],
-          "archetype": "Control",
-          "keyCards": ["Key Card 1", "Key Card 2", "Key Card 3"],
-          "description": "Replace this with a one-sentence description of the deck strategy."
-        }
-      ]
-    },
-    {
       "tier": "A",
       "decks": [
         {
-          "name": "Example Deck Name",
-          "colors": ["R", "G"],
-          "archetype": "Midrange",
-          "keyCards": ["Key Card 1", "Key Card 2"],
-          "description": "Replace this with a one-sentence description of the deck strategy."
+          "name": "4-Color Reanimator",
+          "colors": [
+            "U",
+            "B",
+            "R",
+            "G"
+          ],
+          "winRate": "58.1%"
+        },
+        {
+          "name": "Mono-White Auras",
+          "colors": [
+            "W"
+          ],
+          "winRate": "57.9%"
+        },
+        {
+          "name": "4-Color Allies",
+          "colors": [
+            "W",
+            "U",
+            "R",
+            "G"
+          ],
+          "winRate": "57.8%"
+        },
+        {
+          "name": "5-Color Allies",
+          "colors": [
+            "W",
+            "U",
+            "B",
+            "R",
+            "G"
+          ],
+          "winRate": "57.6%"
+        },
+        {
+          "name": "Mono-Green Stompy",
+          "colors": [
+            "G"
+          ],
+          "winRate": "57.5%"
+        },
+        {
+          "name": "Jeskai Artifacts",
+          "colors": [
+            "W",
+            "U",
+            "R"
+          ],
+          "winRate": "57.1%"
+        },
+        {
+          "name": "Sultai Reanimator",
+          "colors": [
+            "U",
+            "B",
+            "G"
+          ],
+          "winRate": "57.0%"
+        },
+        {
+          "name": "Selesnya Ouroboroid",
+          "colors": [
+            "W",
+            "G"
+          ],
+          "winRate": "56.9%"
         }
       ]
     },
     {
       "tier": "B",
-      "decks": []
+      "decks": [
+        {
+          "name": "Orzhov Skeletons",
+          "colors": [
+            "W",
+            "B"
+          ],
+          "winRate": "56.5%"
+        },
+        {
+          "name": "Temur Kona",
+          "colors": [
+            "U",
+            "R",
+            "G"
+          ],
+          "winRate": "56.5%"
+        },
+        {
+          "name": "4-Color Control",
+          "colors": [
+            "W",
+            "U",
+            "B",
+            "R"
+          ],
+          "winRate": "55.9%"
+        },
+        {
+          "name": "4-Color Dinosaurs",
+          "colors": [
+            "W",
+            "B",
+            "R",
+            "G"
+          ],
+          "winRate": "55.9%"
+        },
+        {
+          "name": "Rakdos Aggro",
+          "colors": [
+            "B",
+            "R"
+          ],
+          "winRate": "55.8%"
+        },
+        {
+          "name": "Mono-White Lifegain",
+          "colors": [
+            "W"
+          ],
+          "winRate": "55.6%"
+        },
+        {
+          "name": "Mono-Blue Elementals",
+          "colors": [
+            "U"
+          ],
+          "winRate": "55.4%"
+        },
+        {
+          "name": "Jeskai Control",
+          "colors": [
+            "W",
+            "U",
+            "R"
+          ],
+          "winRate": "55.1%"
+        },
+        {
+          "name": "Azorius Tempo",
+          "colors": [
+            "W",
+            "U"
+          ],
+          "winRate": "55.1%"
+        },
+        {
+          "name": "Boros Tokens",
+          "colors": [
+            "W",
+            "R"
+          ],
+          "winRate": "55.0%"
+        },
+        {
+          "name": "Selesnya Rabbits",
+          "colors": [
+            "W",
+            "G"
+          ],
+          "winRate": "54.9%"
+        },
+        {
+          "name": "Mono-Green Landfall",
+          "colors": [
+            "G"
+          ],
+          "winRate": "54.8%"
+        },
+        {
+          "name": "Grixis Prowess",
+          "colors": [
+            "U",
+            "B",
+            "R"
+          ],
+          "winRate": "54.4%"
+        },
+        {
+          "name": "Gruul Delirium",
+          "colors": [
+            "R",
+            "G"
+          ],
+          "winRate": "54.3%"
+        },
+        {
+          "name": "Gruul Ouroboroid",
+          "colors": [
+            "R",
+            "G"
+          ],
+          "winRate": "54.2%"
+        },
+        {
+          "name": "Gruul Landfall",
+          "colors": [
+            "R",
+            "G"
+          ],
+          "winRate": "53.9%"
+        },
+        {
+          "name": "Dimir Midrange",
+          "colors": [
+            "U",
+            "B"
+          ],
+          "winRate": "53.8%"
+        },
+        {
+          "name": "Simic Ouroboroid",
+          "colors": [
+            "U",
+            "G"
+          ],
+          "winRate": "53.7%"
+        },
+        {
+          "name": "Izzet Lessons",
+          "colors": [
+            "U",
+            "R"
+          ],
+          "winRate": "53.7%"
+        },
+        {
+          "name": "Izzet Spellementals",
+          "colors": [
+            "U",
+            "R"
+          ],
+          "winRate": "53.7%"
+        },
+        {
+          "name": "Abzan Bats",
+          "colors": [
+            "W",
+            "B",
+            "G"
+          ],
+          "winRate": "53.6%"
+        },
+        {
+          "name": "Boros Burn",
+          "colors": [
+            "W",
+            "R"
+          ],
+          "winRate": "53.6%"
+        },
+        {
+          "name": "Rakdos Monument",
+          "colors": [
+            "B",
+            "R"
+          ],
+          "winRate": "53.6%"
+        },
+        {
+          "name": "Izzet Prowess",
+          "colors": [
+            "U",
+            "R"
+          ],
+          "winRate": "53.4%"
+        },
+        {
+          "name": "Orzhov Sacrifice",
+          "colors": [
+            "W",
+            "B"
+          ],
+          "winRate": "53.1%"
+        }
+      ]
     },
     {
       "tier": "C",
-      "decks": []
+      "decks": [
+        {
+          "name": "Mono-Black Demons",
+          "colors": [
+            "B"
+          ],
+          "winRate": "53.0%"
+        },
+        {
+          "name": "Dimir Excruciator",
+          "colors": [
+            "U",
+            "B"
+          ],
+          "winRate": "52.6%"
+        },
+        {
+          "name": "Mono-White Angels",
+          "colors": [
+            "W"
+          ],
+          "winRate": "52.3%"
+        },
+        {
+          "name": "Mono-Red Aggro",
+          "colors": [
+            "R"
+          ],
+          "winRate": "52.2%"
+        },
+        {
+          "name": "Azorius Control",
+          "colors": [
+            "W",
+            "U"
+          ],
+          "winRate": "52.1%"
+        },
+        {
+          "name": "Dimir Control",
+          "colors": [
+            "U",
+            "B"
+          ],
+          "winRate": "51.8%"
+        },
+        {
+          "name": "Naya Counters",
+          "colors": [
+            "W",
+            "R",
+            "G"
+          ],
+          "winRate": "51.4%"
+        },
+        {
+          "name": "Dimir Mill",
+          "colors": [
+            "U",
+            "B"
+          ],
+          "winRate": "51.3%"
+        },
+        {
+          "name": "Mardu Monument",
+          "colors": [
+            "W",
+            "B",
+            "R"
+          ],
+          "winRate": "50.9%"
+        },
+        {
+          "name": "Grixis Midrange",
+          "colors": [
+            "U",
+            "B",
+            "R"
+          ],
+          "winRate": "50.7%"
+        },
+        {
+          "name": "Mardu Ketramose",
+          "colors": [
+            "W",
+            "B",
+            "R"
+          ],
+          "winRate": "50.6%"
+        }
+      ]
+    },
+    {
+      "tier": "D",
+      "decks": [
+        {
+          "name": "Grixis Oculus",
+          "colors": [
+            "U",
+            "B",
+            "R"
+          ],
+          "winRate": "49.8%"
+        },
+        {
+          "name": "Temur Mathemagics",
+          "colors": [
+            "U",
+            "R",
+            "G"
+          ],
+          "winRate": "49.2%"
+        },
+        {
+          "name": "Golgari Control",
+          "colors": [
+            "B",
+            "G"
+          ],
+          "winRate": "48.9%"
+        },
+        {
+          "name": "Abzan Lifegain",
+          "colors": [
+            "W",
+            "B",
+            "G"
+          ],
+          "winRate": "48.5%"
+        },
+        {
+          "name": "Naya Random Encounter",
+          "colors": [
+            "W",
+            "R",
+            "G"
+          ],
+          "winRate": "47.5%"
+        },
+        {
+          "name": "Dimir Oculus",
+          "colors": [
+            "U",
+            "B"
+          ],
+          "winRate": "47.0%"
+        },
+        {
+          "name": "5-Color Shrines",
+          "colors": [
+            "W",
+            "U",
+            "B",
+            "R",
+            "G"
+          ],
+          "winRate": "46.3%"
+        },
+        {
+          "name": "Orzhov Lifegain",
+          "colors": [
+            "W",
+            "B"
+          ],
+          "winRate": "44.0%"
+        },
+        {
+          "name": "Abzan Walkers",
+          "colors": [
+            "W",
+            "B",
+            "G"
+          ],
+          "winRate": "43.7%"
+        },
+        {
+          "name": "Mardu Burn",
+          "colors": [
+            "W",
+            "B",
+            "R"
+          ],
+          "winRate": "41.9%"
+        }
+      ]
     }
   ]
 }
