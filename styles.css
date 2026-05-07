@@ -423,8 +423,8 @@ main {
 .model-btn {
   flex: 1;
   padding: 8px 12px;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: var(--bg-input);
+  border: 1px solid var(--border-dark);
   border-radius: 6px;
   color: var(--text-muted);
   font-size: 0.8rem;
@@ -517,22 +517,22 @@ main {
 }
 
 /* ============================================================
-   Chat Section
+   Oracle's Insight — Strategy + Redo
    ============================================================ */
-.chat-messages {
-  height: 420px;
+.strategy-display {
+  min-height: 280px;
+  max-height: 420px;
   overflow-y: auto;
   background: var(--bg-dark);
   border: 1px solid var(--border-dark);
   border-radius: 5px;
-  padding: 1rem;
+  padding: 1rem 1.25rem;
   margin-bottom: 1rem;
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
 }
 
-.chat-placeholder {
+.strategy-placeholder {
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -542,59 +542,37 @@ main {
   color: var(--text-dim);
 }
 
-.chat-placeholder p {
+.strategy-placeholder p {
   font-family: var(--font-flavor);
   font-style: italic;
   font-size: 0.9rem;
 }
 
-.chat-msg {
-  padding: 0.8rem 1rem;
-  border-radius: 6px;
-  max-width: 90%;
-  line-height: 1.55;
-  font-size: 0.88rem;
+.strategy-text {
+  font-family: var(--font-flavor);
+  font-size: 0.92rem;
+  line-height: 1.7;
+  color: var(--text);
   white-space: pre-wrap;
   word-wrap: break-word;
-  border: 1px solid transparent;
 }
 
-.chat-msg.user {
-  background: var(--user-msg);
-  border-color: var(--user-border);
-  align-self: flex-end;
-  border-bottom-right-radius: 2px;
+.redo-section {
+  border-top: 1px solid var(--border-dark);
+  padding-top: 1rem;
 }
 
-.chat-msg.assistant {
-  background: var(--ai-msg);
-  border-color: var(--ai-border);
-  align-self: flex-start;
-  border-bottom-left-radius: 2px;
-}
-
-.chat-msg.system {
-  background: rgba(201, 162, 39, 0.06);
-  border-color: rgba(201, 162, 39, 0.2);
-  align-self: center;
-  text-align: center;
-  font-size: 0.82rem;
-  font-family: var(--font-flavor);
-  font-style: italic;
-  color: var(--gold);
-}
-
-.chat-msg .msg-label {
+.redo-label {
   font-family: var(--font-heading);
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   font-weight: 600;
+  color: var(--text-muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  margin-bottom: 0.3rem;
-  opacity: 0.6;
+  margin-bottom: 0.5rem;
 }
 
-/* Chat input */
+/* Shared input row (used by redo) */
 .chat-input-row {
   display: flex;
   gap: 0.5rem;
