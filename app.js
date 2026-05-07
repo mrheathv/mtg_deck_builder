@@ -153,6 +153,14 @@ function setupEventListeners() {
     hideLoading();
   });
 
+  // Model toggle
+  document.querySelectorAll('.model-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('.model-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
   // Generate
   generateBtn.addEventListener('click', generateDeck);
 
@@ -329,7 +337,7 @@ async function callChatGPT() {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-5.4',
+        model: document.querySelector('.model-btn.active')?.dataset.model || 'gpt-5.4',
         messages: conversationHistory,
         temperature: 0.7,
         max_completion_tokens: 4000
