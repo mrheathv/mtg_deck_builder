@@ -1,11 +1,13 @@
 """
-Build per-format MTG card JSON files directly from the Scryfall bulk data.
+Build per-format MTG Arena card JSON files directly from the Scryfall bulk data.
 
 Skips SQLite entirely — processes the bulk JSON in a single pass and writes:
     data/cards-standard.json
     data/cards-historic.json
     data/cards-explorer.json
-    data/cards-pioneer.json
+    data/cards-alchemy.json
+
+All formats are MTG Arena only (arena_only=True).
 
 Usage:
     python scripts/build_cards.py
@@ -30,12 +32,12 @@ DATA_DIR.mkdir(exist_ok=True)
 BULK_TYPE = "default_cards"
 BULK_ENDPOINT = "https://api.scryfall.com/bulk-data"
 
-# (legality_field, arena_only)
+# (legality_field, arena_only) — all MTG Arena formats
 FORMATS = {
     "standard": ("standard", True),
     "historic":  ("historic",  True),
     "explorer":  ("explorer",  True),
-    "pioneer":   ("pioneer",   False),
+    "alchemy":   ("alchemy",   True),
 }
 
 # ---------------------------------------------------------------------------
